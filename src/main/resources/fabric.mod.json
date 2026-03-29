@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "horrormod",
+  "version": "${version}",
+  "name": "Horror Mod",
+  "description": "A horror experience mod for Minecraft 1.20.1",
+  "authors": ["HorrorMod"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.horrormod.HorrorMod"],
+    "client": ["com.horrormod.HorrorModClient"]
+  },
+  "mixins": ["horrormod.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.20.1"
+  }
+}

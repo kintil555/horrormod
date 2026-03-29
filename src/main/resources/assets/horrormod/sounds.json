@@ -1,0 +1,29 @@
+{
+  "horror_ambient": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "horrormod:horror_ambient",
+        "stream": true
+      }
+    ]
+  },
+  "void_ambiance": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "horrormod:void_ambiance",
+        "stream": true
+      }
+    ]
+  },
+  "radio_glitch": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "horrormod:radio_glitch",
+        "stream": false
+      }
+    ]
+  }
+}
