@@ -19,6 +19,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+import com.horrormod.network.HorrorPackets;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.PacketByteBuf;
 import java.util.*;
 
 public class HorrorEventHandler {
@@ -126,6 +130,7 @@ public class HorrorEventHandler {
                                 HorrorSounds.VOID_AMBIANCE, SoundCategory.AMBIENT, 0.5f, 0.9f);
                     }
                     if (state.crossPos != null && isCrossDestroyed(world, state.crossPos)) {
+                        sendJumpscare(player, -1); // jumpscare saat salib hancur
                         teleportToPlanks(server, player, state);
                         state.phase           = Phase.IN_PLANKS_DIMENSION;
                         state.planksEnterPos  = player.getBlockPos();
@@ -145,6 +150,10 @@ public class HorrorEventHandler {
                     if ((now - state.planksEnterTick) % 300 == 20)
                         world.playSound(null, player.getBlockPos(),
                                 HorrorSounds.RADIO_GLITCH, SoundCategory.AMBIENT, 0.6f, 1.2f);
+
+                    // Random jumpscare tiap ~30 detik di planks dimension
+                    if ((now - state.planksEnterTick) % 600 == 50)
+                        sendJumpscare(player, -1);
 
                     enforcePlanksBedrock(world, player);
 
@@ -189,6 +198,7 @@ public class HorrorEventHandler {
                 player.getYaw(), player.getPitch());
         forest.playSound(null, player.getBlockPos(), HorrorSounds.HORROR_AMBIENT, SoundCategory.AMBIENT, 1f, 1f);
         player.sendMessage(Text.literal("\u00a78..."), false);
+        sendJumpscare(player, -1); // random jumpscare saat masuk void forest
     }
 
     private static void teleportToOverworld(MinecraftServer server, ServerPlayerEntity player,
@@ -347,6 +357,20 @@ public class HorrorEventHandler {
             if (!world.getBlockState(c).isAir() && world.getBlockState(c.up()).isAir()) return c.up();
         }
         return pos;
+    }
+
+    // =========================================================
+    //  Jumpscare helper
+    // =========================================================
+
+    /**
+     * Kirim packet jumpscare ke player tertentu.
+     * @param index -1 = random, 0-6 = gambar spesifik
+     */
+    private static void sendJumpscare(ServerPlayerEntity player, int index) {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeByte(index);
+        ServerPlayNetworking.send(player, HorrorPackets.JUMPSCARE, buf);
     }
 
     // =========================================================
