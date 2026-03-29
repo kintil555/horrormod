@@ -23,17 +23,15 @@ import java.util.*;
 
 public class HorrorEventHandler {
 
-    private static final int FOREST_CENTER_X = 32;
-    private static final int FOREST_CENTER_Z = 32;
-    private static final int FOREST_HALF     = 32;
+    // ---- Void Forest: 285x285, center di 142,142 ----
+    private static final int FOREST_CENTER_X = 142;
+    private static final int FOREST_CENTER_Z = 142;
+    private static final int FOREST_HALF     = 142; // 285/2 dibulatkan
     private static final int GROUND_Y        = 1;
     private static final int PLANKS_WALK_DISTANCE = 70;
 
-    // Setiap player punya state sendiri — multiplayer safe
     private static final Map<UUID, PlayerState> playerStates = new HashMap<>();
-
-    // Antrian petir: list (world, pos, tickTarget) agar tidak registrasi listener berulang
-    private static final List<LightningTask> lightningQueue = new ArrayList<>();
+    private static final List<LightningTask> lightningQueue  = new ArrayList<>();
 
     public static void register() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
@@ -59,13 +57,12 @@ public class HorrorEventHandler {
     private static void onServerTick(MinecraftServer server) {
         int now = server.getTicks();
 
-        // Proses antrian petir (satu event listener saja, tidak bertumpuk)
         lightningQueue.removeIf(task -> {
             if (now >= task.tickTarget) {
                 LightningEntity bolt = new LightningEntity(
                         net.minecraft.entity.EntityType.LIGHTNING_BOLT, task.world);
                 bolt.refreshPositionAfterTeleport(task.pos.getX() + 0.5, task.pos.getY(), task.pos.getZ() + 0.5);
-                bolt.setCosmetic(true); // tidak membakar / tidak merusak blok
+                bolt.setCosmetic(true);
                 task.world.spawnEntity(bolt);
                 return true;
             }
@@ -113,8 +110,8 @@ public class HorrorEventHandler {
                             || pz > (FOREST_CENTER_Z + FOREST_HALF);
                     if (boundary || player.getY() < 0) {
                         teleportToOverworld(server, player, state, now);
-                        state.phase       = Phase.RETURNED_FROM_FOREST;
-                        state.returnTick  = now;
+                        state.phase      = Phase.RETURNED_FROM_FOREST;
+                        state.returnTick = now;
                     }
                     break;
                 }
@@ -128,7 +125,6 @@ public class HorrorEventHandler {
                         world.playSound(null, player.getBlockPos(),
                                 HorrorSounds.VOID_AMBIANCE, SoundCategory.AMBIENT, 0.5f, 0.9f);
                     }
-                    // Cek salib milik player INI saja
                     if (state.crossPos != null && isCrossDestroyed(world, state.crossPos)) {
                         teleportToPlanks(server, player, state);
                         state.phase           = Phase.IN_PLANKS_DIMENSION;
@@ -150,9 +146,8 @@ public class HorrorEventHandler {
                         world.playSound(null, player.getBlockPos(),
                                 HorrorSounds.RADIO_GLITCH, SoundCategory.AMBIENT, 0.6f, 1.2f);
 
-                    enforcePlanksCeiling(world, player);
+                    enforcePlanksBedrock(world, player);
 
-                    // Jarak dihitung dari titik masuk player ITU SENDIRI
                     double dist = Math.sqrt(
                         Math.pow(player.getX() - state.planksStartX, 2) +
                         Math.pow(player.getZ() - state.planksStartZ, 2));
@@ -200,20 +195,16 @@ public class HorrorEventHandler {
                                             PlayerState state, int now) {
         ServerWorld ow = server.getWorld(state.overWorldDimKey);
         if (ow == null) ow = server.getOverworld();
-
         BlockPos dest = state.overWorldPos;
         player.teleport(ow, dest.getX() + 0.5, dest.getY() + 1, dest.getZ() + 0.5,
                 player.getYaw(), player.getPitch());
 
-        // Salib 20 block ke timur — unik per-player karena disimpan di state player
         BlockPos crossPos = findSolidGround(ow, dest.add(20, 0, 0));
         state.crossPos = crossPos;
         CrossStructure.spawn(ow, crossPos);
 
-        // 5 petir dalam 5 detik (tiap 20 tick) — ditambah ke antrian global
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
             lightningQueue.add(new LightningTask(ow, crossPos, now + i * 20));
-        }
 
         ow.playSound(null, player.getBlockPos(), HorrorSounds.RADIO_GLITCH, SoundCategory.AMBIENT, 1f, 0.5f);
     }
@@ -222,7 +213,6 @@ public class HorrorEventHandler {
         ServerWorld planks = server.getWorld(HorrorDimensions.PLANKS_DIMENSION_KEY);
         if (planks == null) { HorrorMod.LOGGER.error("[HorrorMod] planks_dimension not found!"); return; }
 
-        // Offset per-player biar tidak tumpang tindih di multiplayer
         int offsetX = Math.abs(player.getUuid().hashCode() % 4096) * 300;
         BlockPos spawn = new BlockPos(offsetX, 1, 0);
         preparePlanksArea(planks, spawn);
@@ -245,10 +235,6 @@ public class HorrorEventHandler {
         player.sendMessage(Text.literal("\u00a74\u00a7l[ \u00a7c\u00a7l... \u00a74\u00a7l]"), false);
     }
 
-    // =========================================================
-    //  Lightning queue helper
-    // =========================================================
-
     private static void spawnManyCrosses(ServerWorld world, BlockPos origin, int now) {
         int[][] offsets = {
             {10,5},{-10,5},{5,-10},{-5,-10},
@@ -267,13 +253,26 @@ public class HorrorEventHandler {
     //  World builders
     // =========================================================
 
+    /**
+     * Void Forest: 285x285 (0..284), tengah di 142,142.
+     * Lantai: bedrock y=0, grass y=1.
+     * Di luar area → void (chunk tidak di-generate = drop ke void).
+     * Pohon tiap 8 blok dalam area.
+     */
     private static void prepareForestGround(ServerWorld world) {
-        for (int x = 0; x < 64; x++) for (int z = 0; z < 64; z++) {
-            world.setBlockState(new BlockPos(x, 0, z), Blocks.BEDROCK.getDefaultState());
-            world.setBlockState(new BlockPos(x, 1, z), Blocks.GRASS_BLOCK.getDefaultState());
+        int size = 285;
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
+                world.setBlockState(new BlockPos(x, 0, z), Blocks.BEDROCK.getDefaultState());
+                world.setBlockState(new BlockPos(x, 1, z), Blocks.GRASS_BLOCK.getDefaultState());
+            }
         }
-        for (int x = 4; x < 64; x += 8) for (int z = 4; z < 64; z += 8)
-            placeOakTree(world, new BlockPos(x, 2, z));
+        // Pohon tiap 8 block, mulai offset 4 biar ada space dari tepi
+        for (int x = 4; x < size; x += 8) {
+            for (int z = 4; z < size; z += 8) {
+                placeOakTree(world, new BlockPos(x, 2, z));
+            }
+        }
     }
 
     private static void placeOakTree(ServerWorld world, BlockPos base) {
@@ -287,21 +286,46 @@ public class HorrorEventHandler {
         world.setBlockState(base.up(5), Blocks.OAK_LEAVES.getDefaultState());
     }
 
+    /**
+     * Planks dimension:
+     * y=0 → BEDROCK (tidak bisa dihancurkan)
+     * y=1 → OAK_PLANKS (dekorasi di atas bedrock)
+     * y=4 → BEDROCK atap (tidak bisa dihancurkan)
+     * y=3 → OAK_PLANKS atap dekorasi
+     * Ruang bermain: y=2 (berdiri di y=2)
+     */
     private static void preparePlanksArea(ServerWorld world, BlockPos center) {
         int r = 200;
-        for (int x = -r; x <= r; x++) for (int z = -r; z <= r; z++) {
-            world.setBlockState(new BlockPos(center.getX()+x, 0, center.getZ()+z), Blocks.OAK_PLANKS.getDefaultState());
-            world.setBlockState(new BlockPos(center.getX()+x, 3, center.getZ()+z), Blocks.OAK_PLANKS.getDefaultState());
+        for (int x = -r; x <= r; x++) {
+            for (int z = -r; z <= r; z++) {
+                int bx = center.getX() + x;
+                int bz = center.getZ() + z;
+                // Lantai
+                world.setBlockState(new BlockPos(bx, 0, bz), Blocks.BEDROCK.getDefaultState());
+                world.setBlockState(new BlockPos(bx, 1, bz), Blocks.OAK_PLANKS.getDefaultState());
+                // Atap
+                world.setBlockState(new BlockPos(bx, 4, bz), Blocks.BEDROCK.getDefaultState());
+                world.setBlockState(new BlockPos(bx, 3, bz), Blocks.OAK_PLANKS.getDefaultState());
+            }
         }
     }
 
-    private static void enforcePlanksCeiling(ServerWorld world, ServerPlayerEntity player) {
+    /**
+     * Hanya jaga bedrock lantai (y=0) dan bedrock atap (y=4) di sekitar player.
+     * Plank (y=1 dan y=3) BEBAS dihancurkan player — tidak di-restore.
+     * Bedrock di-restore kalau hilang (tidak mungkin di survival, tapi jaga-jaga).
+     */
+    private static void enforcePlanksBedrock(ServerWorld world, ServerPlayerEntity player) {
         int px = (int) player.getX(), pz = (int) player.getZ();
-        for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
-            BlockPos f = new BlockPos(px+dx, 0, pz+dz);
-            BlockPos c = new BlockPos(px+dx, 3, pz+dz);
-            if (!world.getBlockState(f).isOf(Blocks.OAK_PLANKS)) world.setBlockState(f, Blocks.OAK_PLANKS.getDefaultState());
-            if (!world.getBlockState(c).isOf(Blocks.OAK_PLANKS)) world.setBlockState(c, Blocks.OAK_PLANKS.getDefaultState());
+        for (int dx = -6; dx <= 6; dx++) {
+            for (int dz = -6; dz <= 6; dz++) {
+                int bx = px + dx, bz2 = pz + dz;
+                // Hanya restore bedrock — plank boleh dihancurkan
+                if (!world.getBlockState(new BlockPos(bx, 0, bz2)).isOf(Blocks.BEDROCK))
+                    world.setBlockState(new BlockPos(bx, 0, bz2), Blocks.BEDROCK.getDefaultState());
+                if (!world.getBlockState(new BlockPos(bx, 4, bz2)).isOf(Blocks.BEDROCK))
+                    world.setBlockState(new BlockPos(bx, 4, bz2), Blocks.BEDROCK.getDefaultState());
+            }
         }
     }
 
@@ -310,7 +334,8 @@ public class HorrorEventHandler {
     // =========================================================
 
     private static boolean isCrossDestroyed(ServerWorld world, BlockPos base) {
-        BlockPos[] pts = {base, base.up(1), base.up(2), base.up(3), base.up(2).west(), base.up(2).east()};
+        // Salib cobblestone, tiang y0-y5, palang di y3
+        BlockPos[] pts = {base, base.up(1), base.up(2), base.up(3), base.up(3).west(), base.up(3).east()};
         int gone = 0;
         for (BlockPos p : pts) if (world.getBlockState(p).isAir()) gone++;
         return gone >= 3;
@@ -346,15 +371,15 @@ public class HorrorEventHandler {
         public int   forestEnterTick   = 0;
         public int   planksEnterTick   = 0;
         public int   returnTick        = 0;
-        public BlockPos          overWorldPos    = BlockPos.ORIGIN;
+        public BlockPos           overWorldPos    = BlockPos.ORIGIN;
         public RegistryKey<World> overWorldDimKey = World.OVERWORLD;
-        public BlockPos          crossPos        = null;   // salib milik player ini
-        public BlockPos          planksEnterPos  = BlockPos.ORIGIN;
-        public double            planksStartX    = 0;
-        public double            planksStartZ    = 0;
-        public int               staircaseTopY   = 0;
-        public boolean           staircaseSpawned     = false;
-        public boolean           playedForeshadowSound = false;
-        public boolean           playedReturnSound     = false;
+        public BlockPos           crossPos        = null;
+        public BlockPos           planksEnterPos  = BlockPos.ORIGIN;
+        public double             planksStartX    = 0;
+        public double             planksStartZ    = 0;
+        public int                staircaseTopY   = 0;
+        public boolean            staircaseSpawned      = false;
+        public boolean            playedForeshadowSound = false;
+        public boolean            playedReturnSound     = false;
     }
 }
