@@ -155,7 +155,7 @@ public class HorrorEventHandler {
                     if ((now - state.planksEnterTick) % 600 == 50)
                         sendJumpscare(player, -1);
 
-                    enforcePlanksBedrock(world, player);
+                    enforcePlanksBedrock(world, player, state);
 
                     double dist = Math.sqrt(
                         Math.pow(player.getX() - state.planksStartX, 2) +
@@ -325,16 +325,21 @@ public class HorrorEventHandler {
      * Plank (y=1 dan y=3) BEBAS dihancurkan player — tidak di-restore.
      * Bedrock di-restore kalau hilang (tidak mungkin di survival, tapi jaga-jaga).
      */
-    private static void enforcePlanksBedrock(ServerWorld world, ServerPlayerEntity player) {
+    private static void enforcePlanksBedrock(ServerWorld world, ServerPlayerEntity player, PlayerState state) {
         int px = (int) player.getX(), pz = (int) player.getZ();
         for (int dx = -6; dx <= 6; dx++) {
             for (int dz = -6; dz <= 6; dz++) {
                 int bx = px + dx, bz2 = pz + dz;
-                // Hanya restore bedrock — plank boleh dihancurkan
+                // Hanya restore bedrock lantai y=0 — jangan restore atap y=4
+                // karena tangga perlu buka lubang di bedrock atap
                 if (!world.getBlockState(new BlockPos(bx, 0, bz2)).isOf(Blocks.BEDROCK))
                     world.setBlockState(new BlockPos(bx, 0, bz2), Blocks.BEDROCK.getDefaultState());
-                if (!world.getBlockState(new BlockPos(bx, 4, bz2)).isOf(Blocks.BEDROCK))
-                    world.setBlockState(new BlockPos(bx, 4, bz2), Blocks.BEDROCK.getDefaultState());
+                // Restore bedrock atap y=4 HANYA jika tangga belum spawn
+                // Setelah tangga spawn, biarkan lubang tetap terbuka
+                if (!state.staircaseSpawned) {
+                    if (!world.getBlockState(new BlockPos(bx, 4, bz2)).isOf(Blocks.BEDROCK))
+                        world.setBlockState(new BlockPos(bx, 4, bz2), Blocks.BEDROCK.getDefaultState());
+                }
             }
         }
     }
