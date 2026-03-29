@@ -1,11 +1,15 @@
 {
   "type": "horrormod:void_forest_type",
   "generator": {
-    "type": "minecraft:noise",
-    "settings": "minecraft:void",
-    "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "horrormod:void_forest_biome"
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "horrormod:void_forest_biome",
+      "layers": [],
+      "lakes": false,
+      "features": false,
+      "structures": {
+        "structures": {}
+      }
     }
   }
 }

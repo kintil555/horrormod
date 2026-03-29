@@ -1,11 +1,15 @@
 {
   "type": "horrormod:planks_dimension_type",
   "generator": {
-    "type": "minecraft:noise",
-    "settings": "minecraft:void",
-    "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "horrormod:planks_biome"
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "horrormod:planks_biome",
+      "layers": [],
+      "lakes": false,
+      "features": false,
+      "structures": {
+        "structures": {}
+      }
     }
   }
 }
