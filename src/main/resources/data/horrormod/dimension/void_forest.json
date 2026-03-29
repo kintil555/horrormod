@@ -1,29 +1,11 @@
 {
-  "has_precipitation": false,
-  "temperature": 0.5,
-  "downfall": 0.5,
-  "effects": {
-    "fog_color": 2171169,
-    "water_color": 4159204,
-    "water_fog_color": 329011,
-    "sky_color": 0,
-    "mood_sound": {
-      "sound": "minecraft:ambient.cave",
-      "tick_delay": 6000,
-      "block_search_extent": 8,
-      "offset": 2.0
+  "type": "horrormod:void_forest_type",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "minecraft:void",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "horrormod:void_forest_biome"
     }
-  },
-  "carvers": {},
-  "features": [],
-  "spawners": {
-    "monster": [],
-    "creature": [],
-    "water_creature": [],
-    "water_ambient": [],
-    "ambient": [],
-    "misc": [],
-    "underground_water_creature": []
-  },
-  "spawn_costs": {}
+  }
 }
