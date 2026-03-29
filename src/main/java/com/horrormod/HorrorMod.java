@@ -1,5 +1,6 @@
 package com.horrormod;
 
+import com.horrormod.entity.HorrorEntities;
 import com.horrormod.event.HorrorEventHandler;
 import com.horrormod.world.HorrorDimensions;
 import com.horrormod.world.HorrorSounds;
@@ -16,11 +17,10 @@ public class HorrorMod implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("Horror Mod initializing...");
-
+        HorrorEntities.register();
         HorrorDimensions.register();
         HorrorSounds.register();
         HorrorEventHandler.register();
-
         LOGGER.info("Horror Mod initialized.");
     }
 }
