@@ -418,13 +418,14 @@ public class HorrorEventHandler {
         List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
         int count = Math.max(players.size(), 4);
 
+        int surfY = 5;
         for (int i = 0; i < count; i++) {
             double angle = (2 * Math.PI / count) * i;
             int px = farlandCenter.getX() + (int)(Math.cos(angle) * 20);
             int pz = farlandCenter.getZ() + (int)(Math.sin(angle) * 20);
 
             // Cari permukaan tanah yang sesungguhnya (bukan hardcode y)
-            int surfY = 5;
+            surfY = 5;
             for (int y = 150; y > 1; y--) {
                 if (!farland.getBlockState(new BlockPos(px, y, pz)).isAir()) {
                     surfY = y + 1; // tepat di atas tanah
