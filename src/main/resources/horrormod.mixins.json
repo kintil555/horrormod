@@ -3,7 +3,13 @@
   "package": "com.horrormod.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [],
-  "client": [],
+  "client": [
+    "GameRendererMixin",
+    "WorldRendererMixin",
+    "BackgroundRendererMixin",
+    "SkyRendererMixin",
+    "PauseScreenMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

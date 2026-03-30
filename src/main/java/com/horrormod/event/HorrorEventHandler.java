@@ -417,14 +417,25 @@ public class HorrorEventHandler {
     private static void spawnReturnPortals(ServerWorld farland, MinecraftServer server, int now) {
         List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
         int count = Math.max(players.size(), 4);
-        int surfY = FARLAND_SURFACE_Y + 1;
 
         for (int i = 0; i < count; i++) {
             double angle = (2 * Math.PI / count) * i;
-            int px = farlandCenter.getX() + (int)(Math.cos(angle) * 15);
-            int pz = farlandCenter.getZ() + (int)(Math.sin(angle) * 15);
+            int px = farlandCenter.getX() + (int)(Math.cos(angle) * 20);
+            int pz = farlandCenter.getZ() + (int)(Math.sin(angle) * 20);
 
-            // Frame obsidian portal 2x3
+            // Cari permukaan tanah yang sesungguhnya (bukan hardcode y)
+            int surfY = 5;
+            for (int y = 150; y > 1; y--) {
+                if (!farland.getBlockState(new BlockPos(px, y, pz)).isAir()) {
+                    surfY = y + 1; // tepat di atas tanah
+                    break;
+                }
+            }
+            // Bersihkan area portal dulu
+            for (int dx = 0; dx <= 3; dx++)
+                for (int dy = 0; dy <= 5; dy++)
+                    farland.setBlockState(new BlockPos(px+dx, surfY+dy, pz), Blocks.AIR.getDefaultState());
+
             BlockPos base = new BlockPos(px, surfY, pz);
             buildNetherPortal(farland, base);
         }
