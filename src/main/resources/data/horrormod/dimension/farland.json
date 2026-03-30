@@ -1,0 +1,13 @@
+{
+  "type": "horrormod:farland_type",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "horrormod:farland_biome",
+      "layers": [],
+      "lakes": false,
+      "features": false,
+      "structures": { "structures": {} }
+    }
+  }
+}

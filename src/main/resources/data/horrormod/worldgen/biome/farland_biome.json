@@ -1,0 +1,27 @@
+{
+  "has_precipitation": false,
+  "temperature": -0.5,
+  "downfall": 0.0,
+  "effects": {
+    "fog_color": 3289650,
+    "water_color": 2105376,
+    "water_fog_color": 1052688,
+    "sky_color": 2697513,
+    "grass_color": 4736346,
+    "foliage_color": 5263440,
+    "mood_sound": {
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "carvers": {},
+  "features": [],
+  "spawners": {
+    "monster": [], "creature": [], "water_creature": [],
+    "water_ambient": [], "ambient": [], "misc": [],
+    "underground_water_creature": []
+  },
+  "spawn_costs": {}
+}
