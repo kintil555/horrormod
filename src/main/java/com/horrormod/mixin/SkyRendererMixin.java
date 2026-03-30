@@ -24,6 +24,6 @@ public class SkyRendererMixin {
         float pulse = (float)(Math.sin(t * 0.005) * 0.15 + 0.85);
         // Set clear color ke ungu
         RenderSystem.clearColor(0.25f * pulse, 0.0f, 0.40f * pulse, 1.0f);
-        RenderSystem.clear(com.mojang.blaze3d.platform.GlStateManager.CLEAR_COLOR, false);
+        RenderSystem.clear(0x4000, false);
     }
 }
